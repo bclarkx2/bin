@@ -51,16 +51,18 @@ BWHT = "\[\033[47m\]"  # background white
 
 colors = [FRED, FYEL, FBLE, FMAG, FCYN, FWHT]
 
+vcs_subdirs = [".svn", ".git"]
+
 
 ###############################################################################
 # Helper functions                                                            #
 ###############################################################################
 
-def get_svn_repo_name_from_tail(pwd):
+def get_vcs_repo_name_from_tail(pwd):
 
     current_dir = pwd.split("/")
 
-    while current_dir and not has_svn_subdir(current_dir):
+    while current_dir and not has_vcs_subdir(current_dir):
         current_dir = current_dir[:-1]
 
     repo_name = ""
@@ -71,33 +73,36 @@ def get_svn_repo_name_from_tail(pwd):
     return repo_name
 
 
-def get_svn_repo_name_from_head(pwd):
+def get_vcs_repo_name_from_head(pwd):
 
     pwd_list = pwd.split("/")
     current_dir = ["/"]
 
     distance_from_root = 1
 
-    while distance_from_root <= len(pwd_list) and not has_svn_subdir(current_dir):
+    while distance_from_root <= len(pwd_list) and not has_vcs_subdir(current_dir):
         distance_from_root += 1
         current_dir = pwd_list[:distance_from_root]
 
     repo_name = ""
-    if has_svn_subdir(current_dir):
+    if has_vcs_subdir(current_dir):
         repo_path = "/".join(current_dir)
         repo_name = os.path.basename(repo_path)
 
     return repo_name
 
 
-def has_svn_subdir(current_dir):
-    return os.path.isdir(svn_candidate_dir(current_dir))
+def has_vcs_subdir(current_dir):
+    for vcs_subdir in vcs_subdirs:
+        if os.path.isdir(vcs_candidate_dir(current_dir, vcs_subdir)):
+            return True
+    return False
 
 
-def svn_candidate_dir(current_dir):
+def vcs_candidate_dir(current_dir, vcs_subdir):
     dir_string = "/".join(current_dir)
-    svn_candidate = os.path.join(dir_string, ".svn")
-    return svn_candidate
+    vcs_candidate = os.path.join(dir_string, vcs_subdir)
+    return vcs_candidate
 
 
 def format_repo_name(repo_name):
@@ -157,7 +162,7 @@ def main():
     except OSError:
         pwd = "DNE"
 
-    repo = get_svn_repo_name_from_head(pwd)
+    repo = get_vcs_repo_name_from_head(pwd)
     repo = limit_path_length(repo, MAX_REPO_LENGTH, REPO_NAME_FRACTION)
 
     # need to get length of repo string before adding color chars
