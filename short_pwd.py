@@ -6,6 +6,7 @@
 
 import os
 import hashlib
+import git
 
 from socket import gethostname
 
@@ -15,9 +16,11 @@ from socket import gethostname
 ###############################################################################
 
 # prompt length limits
-MAX_PROMPT_LENGTH = 35
+MAX_PROMPT_LENGTH = 38
 MAX_REPO_LENGTH = 11
 REPO_NAME_FRACTION = 0.75
+MAX_BRANCH_LENGTH = 11
+BRANCH_FRACTION = 0.75
 
 # user specific info
 MY_USERNAME = "brian"
@@ -105,19 +108,34 @@ def vcs_candidate_dir(current_dir, vcs_subdir):
     return vcs_candidate
 
 
+def get_branch_name(pwd):
+    try:
+        return git.Repo(pwd).active_branch.name
+    except git.exc.GitError:
+        return ""
+
+
 def format_repo_name(repo_name):
-    if repo_name:
-        color = repo_color(repo_name)
-        formatted = "{}[{}]{}".format(color, repo_name, RS)
+    return format_name(repo_name, "{}[{}]{}")
+
+
+def format_branch_name(branch_name):
+    return format_name(branch_name, "{}({}){}")
+
+
+def format_name(name, format_string):
+    if name:
+        color = name_color(name)
+        formatted = format_string.format(color, name, RS)
     else:
         formatted = ""
 
     return formatted
 
 
-def repo_color(repo_name):
-    encoded_repo_name = repo_name.encode('utf-8')
-    color_digest = hashlib.sha256(encoded_repo_name).hexdigest()
+def name_color(name):
+    encoded_name = name.encode('utf-8')
+    color_digest = hashlib.sha256(encoded_name).hexdigest()
     color_index = int(color_digest, 16) % len(colors)
     return colors[color_index]
 
@@ -165,11 +183,16 @@ def main():
     repo = get_vcs_repo_name_from_head(pwd)
     repo = limit_path_length(repo, MAX_REPO_LENGTH, REPO_NAME_FRACTION)
 
+    branch = get_branch_name(pwd) if repo else ""
+    branch = limit_path_length(branch, MAX_BRANCH_LENGTH, BRANCH_FRACTION)
+
     # need to get length of repo string before adding color chars
     unformatted_repo_length = len(repo) + 2 if repo else 0
-    pwd_length = MAX_PROMPT_LENGTH - unformatted_repo_length
+    unformatted_branch_length = len(branch) + 2 if branch else 0
+    pwd_length = MAX_PROMPT_LENGTH - unformatted_repo_length - unformatted_branch_length
 
     repo = format_repo_name(repo)
+    branch = format_branch_name(branch)
 
     homedir = os.path.expanduser('~')
     pwd = pwd.replace(homedir, '~', 1)
@@ -182,7 +205,7 @@ def main():
     if username != MY_USERNAME or hostname != MY_HOSTNAME:
         prompt = '{0}@{1}:{2}{3}'.format(username, hostname, pwd, CURSOR)
     else:
-        prompt = ''.join([repo, FGRN, pwd, RS, FYEL, CURSOR, RS])
+        prompt = ''.join([repo, FGRN, pwd, RS, branch, FYEL, CURSOR, RS])
 
     print(prompt)
 
