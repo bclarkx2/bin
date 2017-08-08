@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# constants
+
+DISPLAY=:0.0
+XAUTHORITY=/home/brian/.Xauthority
+
+TEST_PREFIX="test_"
+PY_SUFFIX=".py"
+
+# functions
+
+displayHelp(){
+
+echo "Usage:
+    -b      open coverage html in browser
+    -h      display help
+    -p      use supplied pattern to find unit test file
+    -s      show standard out
+    -t      zip coverage html into tarball
+    -v      use verbose mode"
+}
+
+show_fail_dialog(){
+
+    if [ $1 -eq 0 ] ; then
+        notify-send "All tests passed" "good job" -t 500 -i /usr/share/icons/gnome/48x48/status/starred.png -u low
+    else
+        notify-send "Tests failed!" "See console output" -t 500 -u critical -i /usr/share/icons/gnome/48x48/emotes/face-crying.png
+    fi
+}
+
+check_coverage_package() {
+
+    python3 -c "import coverage"
+
+    coverage_installed=$?
+
+    if [ $coverage_installed -ne 0 ] ; then
+        echo "Must install python coverage module using pip3"
+        echo "command: pip3 install coverage"
+        exit 1
+    fi
+}
+
+get_pattern_report_option() {
+    whole_pattern=$1
+
+    IFS="_" read -ra parts <<< "$whole_pattern"
+
+    parts=("${parts[@]:1}")
+    length=${#parts[@]}
+
+    pattern_report_option=""
+
+    for i in "${!parts[@]}"; do
+
+
+        relative_dir=("${parts[@]:0:$i}")
+
+        relative_dir_joined=$(IFS=/ ; echo "${relative_dir[*]}")
+
+        remainder=$(expr $length - $i)
+
+        base_name=("${parts[@]:$i:$remainder}")
+
+        base_name_joined=$(IFS=_ ; echo "${base_name[*]}")
+
+        if [ -z "$relative_dir_joined" ] ; then
+            path="$base_name_joined"
+        else
+            path="$relative_dir_joined/$base_name_joined"
+        fi
+
+        if [ -a "$path" ] ; then
+            pattern_report_option="--include=$path"
+            break
+        fi
+
+    done
+    echo "$pattern_report_option"
+}
+
+cd ..
+cp utests/.coveragerc .
+
+check_coverage_package
+
+use_verbose=false
+use_pattern=false
+open_browser=false
+see_std_out=false
+make_tar=false
+
+OPTIND=1
+while getopts "svp:bth" opt; do
+    case $opt in
+
+        s)
+            see_std_out=true
+            ;;
+
+        v)
+            use_verbose=true
+            ;;
+
+        p)
+            use_pattern=true
+            pattern=$( basename $OPTARG )
+            ;;
+
+        b)
+            open_broswer=true
+            ;;
+
+        t)
+            make_tar=true
+            ;;
+
+        h)
+            displayHelp
+            exit
+
+    esac
+done
+
+shift $((OPTIND-1))
+
+# set pattern to search
+case $use_pattern in
+    (true)      pattern_option="-p $pattern"
+                pattern_report_option=$(get_pattern_report_option $pattern)
+                script_name=${pattern#$TEST_PREFIX}
+                without_ext=${script_name%$PY_SUFFIX}
+                page_name="$(echo $without_ext)_py"
+                html_page="$page_name.html";;
+
+    (false)     pattern_option=""
+                pattern_report_option=""
+                html_page="index.html";;
+esac
+
+# set verbose option
+case $use_verbose in
+    (true)      verbose_option="-v";;
+    (false)     verbose_option="";;
+esac
+
+#set std out option
+case $see_std_out in
+    (true)      std_out_option="";;
+    (false)     std_out_option="-b";;
+esac
+
+coverage run -m unittest discover $pattern_option $verbose_option $std_out_option
+
+run_success=$?
+show_fail_dialog $run_success
+
+coverage report $pattern_report_option
+
+report_success=$?
+
+coverage html $pattern_report_option
+
+case $open_broswer in
+    (true)      sensible-browser "utests/htmlcov/$html_page" &>/dev/null &;;
+esac
+
+echo ""
+miminum_coverage_line=$(cat .coveragerc | grep fail_under)
+minimum_coverage=${miminum_coverage_line: -2}
+if [ $report_success -eq 0 ] ; then
+    echo "COMPLETE COVERAGE 
+    - report meets minimum coverage level: $minimum_coverage%"
+else
+    echo "INCOMPLETE COVERAGE: 
+    - report does not meet coverage minimum coverage level: $minimum_coverage%"
+fi
+echo ""
+
+case $make_tar in
+    (true)      cd utests && tar czf onecheck_htmlcov.tar.gz htmlcov && cd ..
+esac
+
+displayHelp
+
+rm .coveragerc
+
+exit $run_success
