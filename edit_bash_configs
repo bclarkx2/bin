@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# constant
+
+# scripty bit
+
+specific_file=${1:-"rc"}
+
+if [ $specific_file != "rc" ] ; then
+    specific_file="_$specific_file"
+fi
+
+bash_file="$HOME/.bash$specific_file"
+
+if [ -f $bash_file ] ; then
+    $EDITOR $bash_file
+else
+    echo "$bash_file does not exist"
+fi

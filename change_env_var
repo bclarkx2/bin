@@ -1,0 +1,6 @@
+#!/bin/bash
+
+variable=$1
+new_value=$2
+
+export "$variable=$new_value"

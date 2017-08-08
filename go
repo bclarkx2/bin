@@ -1,0 +1,15 @@
+#!/bin/bash
+
+output=$(go.py "$@")
+
+# expand tilde
+output="${output/#\~/$HOME}"
+
+# go to directory if possible
+if [[ -d "$output" ]] ; then 
+    cd $output
+
+# else print output as error condition
+else
+    echo "$output"
+fi

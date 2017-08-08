@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo chmod +x -R /home/brian/bin

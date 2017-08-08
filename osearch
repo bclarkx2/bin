@@ -1,0 +1,3 @@
+#!/bin/bash
+
+grep -rn "$@" --color --exclude-dir={htmlcov,install,utests,__pycache__,.svn,build}

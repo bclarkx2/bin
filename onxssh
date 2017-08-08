@@ -1,0 +1,5 @@
+#!/bin/bash
+
+oRoot='/'
+
+sshpass -p "sc3p*fang" ssh -t -o StrictHostKeyChecking=no root@$onx1_IP "cd ${1-"$oRoot"} ; sh -l"

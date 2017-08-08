@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+# constants
+
+DEFAULT_NUM_LINES=40
+
+
+# scripty bit
+
+num_lines=${1:-$DEFAULT_NUM_LINES}
+
+for i in $(seq 1 $num_lines) ;
+do
+    echo ""
+done

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# constants
+
+TRAIN_THRESHOLD=90
+MAX=100
+
+
+
+# scripty bit
+
+rand=$(shuf -i 1-$MAX -n 1)
+
+if [ $rand -le $TRAIN_THRESHOLD ] ; then
+    ls --color=auto
+else
+    sl
+fi

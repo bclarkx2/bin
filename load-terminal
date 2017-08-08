@@ -1,0 +1,19 @@
+#!/bin/bash
+
+source ~/.bashrc
+
+gnome-terminal\
+    --geometry=75x80+1235+0\
+    --window\
+        -t "Misc"\
+        --working-directory="~"\
+    --tab\
+        -t "Base"\
+        -e "bash -c \"source go ob ; bash ; subl\""\
+    --tab\
+        -t "Main"\
+        -e "bash -c \"source go or ; bash\""\
+    --tab\
+        -t "ONX"\
+        --working-directory="/"\
+        -e "bash -c \"onxssh ; bash\""\
