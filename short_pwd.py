@@ -24,7 +24,7 @@ BRANCH_FRACTION = 0.75
 
 # user specific info
 MY_USERNAME = "brian"
-MY_HOSTNAME = "bclark-ubuntu"
+MY_HOSTNAME = "muffin"
 
 # prompt text constants
 CURSOR = '$ '
