@@ -6,7 +6,6 @@
 
 import os
 import hashlib
-import git
 
 from socket import gethostname
 
@@ -61,23 +60,7 @@ vcs_subdirs = [".svn", ".git"]
 # Helper functions                                                            #
 ###############################################################################
 
-def get_vcs_repo_name_from_tail(pwd):
-
-    current_dir = pwd.split("/")
-
-    while current_dir and not has_vcs_subdir(current_dir):
-        current_dir = current_dir[:-1]
-
-    repo_name = ""
-    if current_dir:
-        repo_path = "/".join(current_dir)
-        repo_name = os.path.basename(repo_path)
-
-    return repo_name
-
-
-def get_vcs_repo_name_from_head(pwd):
-
+def repo_information(pwd):
     pwd_list = pwd.split("/")
     current_dir = ["/"]
 
@@ -87,19 +70,25 @@ def get_vcs_repo_name_from_head(pwd):
         distance_from_root += 1
         current_dir = pwd_list[:distance_from_root]
 
+    repo_path = ""
     repo_name = ""
-    if has_vcs_subdir(current_dir):
+    vcs_subdir = get_vcs_subdir(current_dir)
+    if vcs_subdir:
         repo_path = "/".join(current_dir)
         repo_name = os.path.basename(repo_path)
 
-    return repo_name
+    return repo_name, repo_path, vcs_subdir
 
 
 def has_vcs_subdir(current_dir):
+    return get_vcs_subdir(current_dir)
+
+
+def get_vcs_subdir(current_dir):
     for vcs_subdir in vcs_subdirs:
         if os.path.isdir(vcs_candidate_dir(current_dir, vcs_subdir)):
-            return True
-    return False
+            return vcs_subdir
+    return ""
 
 
 def vcs_candidate_dir(current_dir, vcs_subdir):
@@ -108,10 +97,14 @@ def vcs_candidate_dir(current_dir, vcs_subdir):
     return vcs_candidate
 
 
-def get_branch_name(pwd):
+def get_branch_name(repo_path, vcs_subdir):
     try:
-        return git.Repo(pwd).active_branch.name
-    except git.exc.GitError:
+        head_filepath = os.path.join(repo_path, vcs_subdir, "HEAD")
+        with open(head_filepath) as head_file:
+            ref_line = head_file.readline().strip()
+            branch_name = ref_line.split("/")[-1]
+            return branch_name
+    except FileNotFoundError:
         return ""
 
 
@@ -180,10 +173,10 @@ def main():
     except OSError:
         pwd = "DNE"
 
-    repo = get_vcs_repo_name_from_head(pwd)
+    repo, repo_path, vcs_subdir = repo_information(pwd)
     repo = limit_path_length(repo, MAX_REPO_LENGTH, REPO_NAME_FRACTION)
 
-    branch = get_branch_name(pwd) if repo else ""
+    branch = get_branch_name(repo_path, vcs_subdir) if repo else ""
     branch = limit_path_length(branch, MAX_BRANCH_LENGTH, BRANCH_FRACTION)
 
     # need to get length of repo string before adding color chars
