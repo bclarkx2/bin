@@ -6,6 +6,7 @@
 
 import os
 import hashlib
+import sys
 
 from socket import gethostname
 
@@ -23,7 +24,10 @@ BRANCH_FRACTION = 0.75
 
 # user specific info
 MY_USERNAME = "brian"
-MY_HOSTNAME = "muffin"
+if len(sys.argv) > 1:
+    MY_HOSTNAME = sys.argv[1]
+else:
+    MY_HOSTNAME = "muffin"
 
 # prompt text constants
 CURSOR = '$ '
