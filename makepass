@@ -32,6 +32,4 @@ output=$(echo "$input" | \
 # output
 # # # # # # # # # # # #
 
-echo $output
-
 echo $output | xclip -selection c
