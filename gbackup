@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export GOOGLE_DRIVE_SETTINGS=~/.duplicity/credentials
+duplicity --include-filelist ~/.duplicity/include \
+          --exclude-filelist ~/.duplicity/ignore \
+          ~/ \
+          gdocs://bclarkx2@gmail.com/Backups/muffin \
+          -v 3 \
+          "$@"
