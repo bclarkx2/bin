@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+#
+# args
+# # # # # # # # # # # #
+
+input="$1"
+
+
+#
+# length gen
+# # # # # # # # # # # #
+
+FLOOR=15
+CEILING=25
+
+offset=$(( $(($input % 100000)) / 10000))
+length=$(($FLOOR + $offset))
+
+
+#
+# hash
+# # # # # # # # # # # #
+
+output=$(echo "$input" | \
+         sha256 -n 21 2>/dev/null | \
+         base64 \
+        )
+
+
+#
+# output
+# # # # # # # # # # # #
+
+echo $output
+
+echo $output | xclip -selection c
