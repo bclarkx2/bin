@@ -1,9 +1,16 @@
 #!/bin/bash
 
-export GOOGLE_DRIVE_SETTINGS=~/.duplicity/credentials
-duplicity --include-filelist ~/.duplicity/include \
-          --exclude-filelist ~/.duplicity/ignore \
+DUP="$HOME/.duplicity"
+
+# load gdrive settings file
+export GOOGLE_DRIVE_SETTINGS=$DUP/credentials
+
+# use GPG passphrase indicated on local filesystem
+# run duplicity using include/exclude rules
+env PASSPHRASE=$(cat $DUP/passphrase) \
+    duplicity --include-filelist $DUP/include \
+          --exclude-filelist $DUP/ignore \
           ~/ \
-          gdocs://bclarkx2@gmail.com/Backups/muffin \
+          $(cat $DUP/target) \
           -v 3 \
           "$@"
