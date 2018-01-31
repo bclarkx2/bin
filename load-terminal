@@ -1,19 +1,88 @@
 #!/bin/bash
 
-source ~/.bashrc
+open_subl=false
+frac=0.33
 
-gnome-terminal\
-    --geometry=75x80+1235+0\
-    --window\
-        -t "Misc"\
-        --working-directory="~"\
-    --tab\
-        -t "Base"\
-        -e "bash -c \"source go ob ; bash ; subl\""\
-    --tab\
-        -t "Main"\
-        -e "bash -c \"source go or ; bash\""\
-    --tab\
-        -t "ONX"\
-        --working-directory="/"\
-        -e "bash -c \"onxssh ; bash\""\
+# parse cmd line options
+while getopts ":cf:sr" o; do
+    case "${o}" in
+
+        # center
+        c)
+            frac=0.4835
+            ;;
+
+        # set subl/term fraction
+        f)
+            frac=${OPTARG}
+            ;;
+
+        # right
+        r)
+            frac=0.25
+            ;;
+
+        # open subl
+        s)
+            open_subl=true
+            ;;
+
+        # unrecognized
+        *)
+            echo "d'oh"
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+
+# parse window dimensions
+DIMENSIONS=$(xdpyinfo | \
+           grep dimensions | \
+           sed -r 's/^[^0-9]*([0-9]+x[0-9]+).*$/\1/')
+
+WIDTH=$(echo $DIMENSIONS | sed -r 's/x.*//')
+HEIGHT=$(echo $DIMENSIONS | sed -r 's/.*x//')
+
+
+# set terminal size
+TERM_WIDTH=$(printf %0.f $(bc <<< "$WIDTH * $frac"))
+TERM_HEIGHT=$HEIGHT
+
+TERM_X=$(($WIDTH - $TERM_WIDTH))
+TERM_Y=0
+
+
+# rename terminal window
+wmctrl -r :ACTIVE: -N gnome-terminal
+
+# resize to right third
+wmctrl -r gnome-terminal -b remove,maximized_vert,maximized_horz,fullscreen
+wmctrl -r gnome-terminal -e 1,$TERM_X,$TERM_Y,$TERM_WIDTH,$TERM_HEIGHT
+
+case $open_subl in
+    true)
+
+        # set subl window size
+        SUBL_WIDTH=$(($WIDTH - $TERM_WIDTH - 75))
+        SUBL_HEIGHT=$HEIGHT
+
+        SUBL_X=0
+        SUBL_Y=0
+
+
+        # awaken subl if necessary
+        if [[ -z $(pgrep sublime) ]] ; then
+            subl
+            sleep 0.5
+        else
+            sleep 0.1
+        fi
+
+        # move subl window
+        wmctrl -r subl -e 1,$SUBL_X,$SUBL_Y,$SUBL_WIDTH,$SUBL_HEIGHT
+
+        # return focus to term
+        wmctrl -a gnome-terminal
+        ;;
+esac
