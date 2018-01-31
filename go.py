@@ -110,6 +110,10 @@ def get_parser(parser_type):
                        help="create new root",
                        nargs=2)
 
+    group.add_argument("--setup",
+                       help="create default config files",
+                       action="store_true")
+
     group.add_argument("--complete",
                        help="complete cmd line")
 
@@ -303,6 +307,47 @@ def filter_applicable_shortcuts(shortcuts, word_to_complete):
     return [shortcut for shortcut in shortcuts if shortcut.startswith(word_to_complete)]
 
 
+def ensure_dir(directory):
+    os.makedirs(directory, exist_ok=True)
+
+
+def ensure_file(path):
+    open(path, 'w').close()
+
+
+def write_config_files():
+
+    # ensure all directories and files are present
+    ensure_dir(GO_DIR)
+    ensure_dir(SETUP_DIR)
+    ensure_dir(INFO_DIR)
+
+    ensure_file(CONFIG_FILEPATH)
+    ensure_file(ROOTS_FILEPATH)
+
+    # write configs
+    configs = {"current_root": "go"}
+    save_configs(configs)
+
+    # write roots file
+    roots = {
+        "defaults": [],
+        "name": "go",
+        "path": "~/.config/go"
+    }
+    with open(ROOTS_FILEPATH, 'w') as roots_file:
+        json.dump(roots, roots_file, sort_keys=True, indent=4)
+
+    # write go info file
+    info = {
+        "info": "info",
+        "setup": "setup"
+    }
+    go_info_path = os.path.join(INFO_DIR, "go.json")
+    with open(go_info_path, 'w') as go_info_file:
+        json.dump(info, go_info_file, sort_keys=True, indent=4)
+
+
 def find_applicable_complete_options(args, roots, configs):
 
     cmd = args.complete.split(' ')
@@ -343,18 +388,28 @@ def find_applicable_complete_options(args, roots, configs):
 def main():
 
     #
-    # Load configs
-    # # # # # # # # # # # #
-
-    configs = load_file(CONFIG_FILEPATH)
-    roots = load_file(ROOTS_FILEPATH)
-
-    #
     # Parse command line arguments
     # # # # # # # # # # # # # # # # #
 
     parser = get_parser(argparse.ArgumentParser)
     args = parser.parse_args()
+
+    # check setup mode
+    if args.setup:
+        ans = input("press 'y' to confirm config overwrite:\n")
+        if ans == 'y':
+            write_config_files()
+            print("wrote config files")
+        else:
+            print("aborting")
+        sys.exit(0)
+
+    #
+    # Load configs
+    # # # # # # # # # # # #
+
+    configs = load_file(CONFIG_FILEPATH)
+    roots = load_file(ROOTS_FILEPATH)
 
     #
     # Set op mode
