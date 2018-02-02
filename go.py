@@ -108,6 +108,7 @@ def get_parser(parser_type):
 
     group.add_argument("-n", "--new",
                        help="create new root",
+                       metavar=("SHORTCUT", "NAME"),
                        nargs=2)
 
     group.add_argument("--setup",
@@ -331,12 +332,28 @@ def write_config_files():
 
     # write roots file
     roots = {
-        "defaults": [],
-        "name": "go",
-        "path": "~/.config/go"
+        "com": {
+            "defaults": [],
+            "name": "common",
+            "path": ""
+        },
+        "go": {
+            "defaults": ["common"],
+            "name": "go",
+            "path": "~/.config/go"
+        }
     }
     with open(ROOTS_FILEPATH, 'w') as roots_file:
         json.dump(roots, roots_file, sort_keys=True, indent=4)
+
+    # write common info file
+    info = {
+        "root": "",
+        "/": ""
+    }
+    common_info_path = os.path.join(INFO_DIR, "common.json")
+    with open(common_info_path, 'w') as common_info_file:
+        json.dump(info, common_info_file, sort_keys=True, indent=4)
 
     # write go info file
     info = {
