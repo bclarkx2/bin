@@ -7,10 +7,23 @@
 import argparse
 import subprocess
 
+###############################################################################
+# Constants                                                                   #
+###############################################################################
+
+LIBS = ["xrepl", "racket/trace"]
+
 
 ###############################################################################
 # Helper functions                                                            #
 ###############################################################################
+
+def option_list(option, lis):
+    res = []
+    for value in lis:
+        res.extend([option, value])
+    return res
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -27,12 +40,10 @@ def main():
 
     args = get_args()
 
-    file_lst = []
-
-    for f in args.files:
-        file_lst.extend(["-f", f])
-
-    arg_lst = ["racket"] + file_lst + ["-i"]
+    arg_lst = ["racket"]
+    arg_lst += option_list("-f", args.files)
+    arg_lst += option_list("-l", LIBS)
+    arg_lst += ["-i"]
 
     subprocess.call(arg_lst)
 
