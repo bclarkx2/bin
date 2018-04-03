@@ -2,5 +2,9 @@
 
 specific="${1:-single-dir}"
 
+if [[ -z "$MAKEFILE_HOME" ]] ; then
+    echo "MAKEFILE_HOME must be set. See https://github.com/bclarkx2/mkfl"
+    exit 1
+fi
 
 cp "$MAKEFILE_HOME/$specific/makefile" .
