@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+
+specific="${1:-single-dir}"
+
+
+cp "$MAKEFILE_HOME/$specific/makefile" .
