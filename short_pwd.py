@@ -70,15 +70,18 @@ def repo_information(pwd):
 
     distance_from_root = 1
 
-    while distance_from_root <= len(pwd_list) and not has_vcs_subdir(current_dir):
+    last_with_vcs = "."
+    while distance_from_root <= len(pwd_list):
+        if has_vcs_subdir(current_dir):
+            last_with_vcs = current_dir
         distance_from_root += 1
         current_dir = pwd_list[:distance_from_root]
 
     repo_path = ""
     repo_name = ""
-    vcs_subdir = get_vcs_subdir(current_dir)
+    vcs_subdir = get_vcs_subdir(last_with_vcs)
     if vcs_subdir:
-        repo_path = "/".join(current_dir)
+        repo_path = "/".join(last_with_vcs)
         repo_name = os.path.basename(repo_path)
 
     return repo_name, repo_path, vcs_subdir
@@ -90,7 +93,8 @@ def has_vcs_subdir(current_dir):
 
 def get_vcs_subdir(current_dir):
     for vcs_subdir in vcs_subdirs:
-        if os.path.isdir(vcs_candidate_dir(current_dir, vcs_subdir)):
+        candidate = vcs_candidate_dir(current_dir, vcs_subdir)
+        if os.path.exists(candidate):
             return vcs_subdir
     return ""
 
@@ -103,11 +107,18 @@ def vcs_candidate_dir(current_dir, vcs_subdir):
 
 def get_branch_name(repo_path, vcs_subdir):
     try:
-        head_filepath = os.path.join(repo_path, vcs_subdir, "HEAD")
-        with open(head_filepath) as head_file:
-            ref_line = head_file.readline().strip()
-            branch_name = ref_line.split("/")[-1]
-            return branch_name
+        vcs_obj = os.path.join(repo_path, vcs_subdir)
+
+        if os.path.isdir(vcs_obj):
+            head_filepath = os.path.join(vcs_obj, "HEAD")
+            with open(head_filepath) as head_file:
+                ref_line = head_file.readline().strip()
+                branch_name = ref_line.split("/")[-1]
+                return branch_name
+        elif os.path.isfile(vcs_obj):
+            return "SUBMODULE"
+        else:
+            return ""
     except FileNotFoundError:
         return ""
 
