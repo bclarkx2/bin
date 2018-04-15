@@ -174,6 +174,14 @@ def rnd(arg):
     return int(round(arg))
 
 
+def get_virtual_env():
+    if hasattr(sys, "real_prefix"):
+        venv_name = os.path.basename(sys.prefix)
+        return format_name(venv_name, "{}|{}|{}")
+    else:
+        return ""
+
+
 ###############################################################################
 # Main                                                                        #
 ###############################################################################
@@ -205,6 +213,8 @@ def main():
     homedir = os.path.expanduser('~')
     pwd = pwd.replace(homedir, '~', 1)
 
+    virtualenv = get_virtual_env()
+
     if repo:
         pwd = limit_path_length(pwd, pwd_length, 1.0)
     else:
@@ -213,7 +223,7 @@ def main():
     if username != MY_USERNAME or hostname != MY_HOSTNAME:
         prompt = '{0}@{1}:{2}{3}'.format(username, hostname, pwd, CURSOR)
     else:
-        prompt = ''.join([repo, FGRN, pwd, RS, branch, FYEL, CURSOR, RS])
+        prompt = ''.join([repo, FGRN, pwd, RS, branch, virtualenv, FYEL, CURSOR, RS])
 
     print(prompt)
 
