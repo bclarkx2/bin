@@ -41,9 +41,9 @@ def main():
     args = get_args()
 
     arg_lst = ["racket"]
+    arg_lst += ["-i"]
     arg_lst += option_list("-f", args.files)
     arg_lst += option_list("-l", LIBS)
-    arg_lst += ["-i"]
 
     subprocess.call(arg_lst)
 
