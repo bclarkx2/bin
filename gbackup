@@ -1,6 +1,14 @@
 #!/bin/bash
 
-DUP="$HOME/.duplicity"
+if [[ -z $1 ]] ; then
+    home="$HOME"
+else
+    home="$1"
+    shift
+fi
+
+DUP="$home/.duplicity"
+
 
 # load gdrive settings file
 export GOOGLE_DRIVE_SETTINGS=$DUP/credentials
@@ -10,7 +18,6 @@ export GOOGLE_DRIVE_SETTINGS=$DUP/credentials
 env PASSPHRASE=$(cat $DUP/passphrase) \
     duplicity --include-filelist $DUP/include \
           --exclude-filelist $DUP/ignore \
-          ~/ \
+          "$home" \
           $(cat $DUP/target) \
-          -v 3 \
-          "$@"
+          -v 3
