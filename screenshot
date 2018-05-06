@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+
+import os
+import shutil
+import argparse
+import datetime
+from subprocess import Popen, PIPE, run
+from tempfile import NamedTemporaryFile
+
+SCREENSHOT_UTILITY = '/usr/bin/scrot'
+OUT_DIR = os.path.expanduser("~/pic/screenshots")
+
+
+def feed_xclipboard(screenshot_fp):
+    with open(screenshot_fp, 'rb') as f:
+        pipe = Popen("xclip -sel clip -t image/png", shell=True, stdin=PIPE).stdin
+        pipe.write(f.read(-1))
+        pipe.close()
+
+
+def feed_file(screenshot_fp, out_filepath):
+    open(out_filepath, 'w+').close()
+    shutil.move(screenshot_fp, out_filepath)
+
+
+def default_out_filepath():
+    now = datetime.datetime.now()
+    now_str = datetime.datetime.strftime(now, "%F|%H-%M-%S")
+    screenshot_filename = "screenshot_{}.png".format(now_str)
+    out_filepath = os.path.join(OUT_DIR, screenshot_filename)
+    return out_filepath
+
+
+def custom_out_filepath(out_filename):
+    out_filepath = os.path.join(OUT_DIR, out_filename)
+    if not out_filepath.endswith(".png"):
+        out_filepath += ".png"
+    return out_filepath
+
+
+def import_screenshot(options):
+    cmd = " ".join([SCREENSHOT_UTILITY] + options)
+    filename = NamedTemporaryFile(
+        suffix='.png',
+        prefix='screenshot_',
+        dir=os.environ.get('TMPDIR', '/tmp'),
+        delete=False).name
+    p = Popen(cmd + " " + filename, shell=True)
+    os.waitpid(p.pid, 0)[1]
+    return filename
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", "-o",
+                        help="name of output file")
+    parser.add_argument("--select", "-s",
+                        action="store_true",
+                        help="select portion of screen")
+    parser.add_argument("--clip", "-c",
+                        action="store_true",
+                        help="copy to clipboard")
+    parser.add_argument("--edit", "-e",
+                        help="edit screenshot",
+                        action="store_true")
+    return parser.parse_args()
+
+
+def main():
+
+    args = get_args()
+
+    options = []
+    if args.select:
+        options.append("-s")
+
+    screenshot_fp = import_screenshot(options)
+
+    if args.clip:
+        print("copied to clipboard")
+        feed_xclipboard(screenshot_fp)
+
+    if args.out:
+        out_filepath = custom_out_filepath(args.out)
+        feed_file(screenshot_fp, out_filepath)
+
+    if not args.out:
+        out_filepath = default_out_filepath()
+        feed_file(screenshot_fp, out_filepath)
+
+    print(out_filepath)
+
+    if args.edit:
+        run(["pinta", out_filepath])
+
+
+if __name__ == '__main__':
+    main()
