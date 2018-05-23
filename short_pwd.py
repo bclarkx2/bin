@@ -174,11 +174,24 @@ def rnd(arg):
     return int(round(arg))
 
 
-def get_virtual_env():
+def get_virtual_env(pwd):
+
+    # might be in an activated venv
     if hasattr(sys, "real_prefix"):
         venv_name = os.path.basename(sys.prefix)
         return format_name(venv_name, "{}|{}|{}")
+
+    # might be in a directory that contains a venv
     else:
+
+        pwd = os.path.expanduser(pwd)
+        _, subdirs, _ = next(os.walk(pwd))
+
+        for subdir in subdirs:
+            f = os.path.join(subdir, "bin", "activate")
+            if os.path.isfile(f):
+                return format_name("ENV", "{}!!{}!!{}")
+
         return ""
 
 
@@ -213,7 +226,7 @@ def main():
     homedir = os.path.expanduser('~')
     pwd = pwd.replace(homedir, '~', 1)
 
-    virtualenv = get_virtual_env()
+    virtualenv = get_virtual_env(pwd)
 
     if repo:
         pwd = limit_path_length(pwd, pwd_length, 1.0)
