@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# handy shell function to do expansions
+apply_shell_expansion() {
+    declare data="$1"
+    declare delimiter="__apply_shell_expansion_delimiter__"
+    declare command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
+    eval "$command"
+}
+
+# grab home from command line to allow use by sudo
 if [[ -z $1 ]] ; then
     home="$HOME"
 else
@@ -7,17 +16,29 @@ else
     shift
 fi
 
+# set duplicity settings location
 DUP="$home/.duplicity"
 
+# grab this user's bash variables
+source "$home/.bash_variables"
 
-# load gdrive settings file
+# load google settings into env var
 export GOOGLE_DRIVE_SETTINGS=$DUP/credentials
 
-# use GPG passphrase indicated on local filesystem
-# run duplicity using include/exclude rules
-env PASSPHRASE=$(cat $DUP/passphrase) \
-    duplicity --include-filelist $DUP/include \
-          --exclude-filelist $DUP/ignore \
-          "$home" \
-          $(cat $DUP/target) \
-          -v 3
+# read targets from target files
+raw_targets=$(cat $DUP/target)
+
+for raw_target in $raw_targets
+do
+
+    target=$(apply_shell_expansion "$raw_target")
+
+    echo "$target"
+
+    env PASSPHRASE=$(cat $DUP/passphrase)       \
+    duplicity --include-filelist $DUP/include   \
+              --exclude-filelist $DUP/ignore    \
+              "$home"                           \
+              "$target"                         \
+              -v 3
+done
