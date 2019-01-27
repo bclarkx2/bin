@@ -14,5 +14,5 @@ rand=$(shuf -i 1-$MAX -n 1)
 if [ $rand -le $TRAIN_THRESHOLD ] ; then
     ls --color=auto
 else
-    sl
+    sl -e
 fi
