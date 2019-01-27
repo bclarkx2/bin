@@ -285,7 +285,7 @@ def is_valid_info_file(filepath):
 
 
 def edit_file(filepath):
-    editor = os.getenv('EDITOR')
+    editor = os.getenv('VISUAL')
     return subprocess.call([editor, filepath])
 
 
