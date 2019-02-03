@@ -177,7 +177,7 @@ def rnd(arg):
 def get_virtual_env(pwd):
 
     # might be in an activated venv
-    if hasattr(sys, "real_prefix"):
+    if sys.prefix != sys.base_prefix:
         venv_name = os.path.basename(sys.prefix)
         return format_name(venv_name, "{}|{}|{}")
 
