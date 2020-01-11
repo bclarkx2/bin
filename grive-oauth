@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+# Setup
+json_file=${GRIVE_OAUTH_JSON:-"grive.json"}
+target=${GRIVE_TARGET:-"/home/brian/"}
+is_dry_run=0
+
+usage="$(basename "$0") [-hd] [-f json_file] -- program to run grive using oauth client info
+
+where:
+    -h  show this help text
+    -d  dry run
+    -f  <file> use <file> as the file path for the oauth client info JSON file
+    -p  <dir> use <dir> as the directory to backup"
+
+# Parse options
+while getopts ":f:dhp:" opt; do
+    case "${opt}" in
+
+        # id [f]ile
+        f)
+            json_file=$OPTARG
+            ;;
+
+        # dry-run
+        d)
+            is_dry_run=1
+            ;;
+
+        # help
+	h)
+	    echo "$usage" >&2
+	    exit 1
+	    ;;
+
+        # target
+	p)
+	    target=$OPTARG
+	    ;;
+
+        # missing argument
+        :)
+	    echo "Missing argument for -$OPTARG"
+	    echo "$usage" >&2
+	    exit 1
+	    ;;
+
+        # unrecognized option
+	*)
+	    echo "Unknown option: -$OPTARG"
+	    echo "$usage" >&2
+	    exit 1
+	    ;;
+
+    esac
+done
+shift $((OPTIND-1))
+
+
+# Extract JSON keys
+client_id=$(cat $json_file | jq -r '.installed | .client_id')
+client_secret=$(cat $json_file | jq -r '.installed | .client_secret')
+
+# Verify
+if [[ -z "$client_id" ]]; then
+    echo "Missing client_id"
+    exit 1
+elif [[ -z "$client_secret" ]]; then
+    echo "Missing client_secret"
+    exit 1
+elif [[ -z "$target" ]]; then
+    echo "Missing target"
+    exit 1
+fi
+
+# Format argument string
+args="-p $target --id $client_id --secret $client_secret"
+
+# Execute
+if [[ "$is_dry_run" -eq 1 ]]; then
+    echo "grive $args"
+else
+    grive $args
+fi

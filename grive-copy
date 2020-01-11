@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cat "$1" | jq '.' > $GRIVE_OAUTH_JSON
