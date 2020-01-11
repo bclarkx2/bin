@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+stat $GRIVE_LOG -c %z
