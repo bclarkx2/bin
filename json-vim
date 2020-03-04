@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# use self-filter if no args
+opts="${@:-.}"
+
+# call jq on stdin and then pipe the results into an unnamed vim buffer
+jq "$opts" | vim -c 'set syntax=json' -
