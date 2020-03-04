@@ -23,11 +23,8 @@ MAX_BRANCH_LENGTH = 11
 BRANCH_FRACTION = 0.75
 
 # user specific info
-MY_USERNAME = "brian"
-if len(sys.argv) > 1:
-    MY_HOSTNAME = sys.argv[1]
-else:
-    MY_HOSTNAME = "muffin"
+MY_USERNAME = os.getenv("MY_USERNAME")
+MY_HOSTNAME = os.getenv("MY_HOSTNAME")
 
 # prompt text constants
 CURSOR = '$ '
@@ -233,6 +230,7 @@ def main():
     else:
         pwd = limit_path_length(pwd, pwd_length, 0.75)
 
+    # if we are not in "normal" user+host for this box, use default
     if username != MY_USERNAME or hostname != MY_HOSTNAME:
         prompt = '{0}@{1}:{2}{3}'.format(username, hostname, pwd, CURSOR)
     else:
