@@ -113,7 +113,7 @@ def get_branch_name(repo_path, vcs_subdir):
                 branch_name = ref_line.split("/")[-1]
                 return branch_name
         elif os.path.isfile(vcs_obj):
-            return "SUBMODULE"
+            return "SUB"
         else:
             return ""
     except FileNotFoundError:
