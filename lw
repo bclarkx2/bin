@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+width="${1:-80}"
+
+ls --color=auto -w "$width"
