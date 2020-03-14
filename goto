@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output=$(go.py "$@")
+output=$(goto.py "$@")
 
 # expand tilde
 output="${output/#\~/$HOME}"
