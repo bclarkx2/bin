@@ -9,18 +9,15 @@ import hashlib
 import sys
 
 from socket import gethostname
+from os import path 
+from git import Repo
+
+import subprocess
 
 
 ###############################################################################
 # Constants                                                                   #
 ###############################################################################
-
-# prompt length limits
-MAX_PROMPT_LENGTH = 38
-MAX_REPO_LENGTH = 11
-REPO_NAME_FRACTION = 0.75
-MAX_BRANCH_LENGTH = 11
-BRANCH_FRACTION = 0.75
 
 # user specific info
 MY_USERNAME = os.getenv("MY_USERNAME")
@@ -61,63 +58,90 @@ vcs_subdirs = [".svn", ".git"]
 # Helper functions                                                            #
 ###############################################################################
 
+# Retrieval functions
+
 def repo_information(pwd):
     pwd_list = pwd.split("/")
-    current_dir = ["/"]
 
-    distance_from_root = 1
+    repos = []
+    last_repo = []
+    last_vcs_subdir = ""
 
-    last_with_vcs = "."
-    while distance_from_root <= len(pwd_list):
-        if has_vcs_subdir(current_dir):
-            last_with_vcs = current_dir
-        distance_from_root += 1
-        current_dir = pwd_list[:distance_from_root]
+    for i in range(2, len(pwd_list)+1):
+        current_dir = pwd_list[:i]
+        vcs_subdir = get_vcs_subdir(current_dir)
+        if vcs_subdir:
+            last_repo = current_dir
+            repos.append(current_dir[-1])
+            last_vcs_subdir = vcs_subdir
 
-    repo_path = ""
-    repo_name = ""
-    vcs_subdir = get_vcs_subdir(last_with_vcs)
-    if vcs_subdir:
-        repo_path = "/".join(last_with_vcs)
-        repo_name = os.path.basename(repo_path)
+    repo_str = "->".join(repos)
+    repo_path = "/".join(last_repo)
 
-    return repo_name, repo_path, vcs_subdir
-
-
-def has_vcs_subdir(current_dir):
-    return get_vcs_subdir(current_dir)
+    return repo_str, repo_path, last_vcs_subdir
 
 
 def get_vcs_subdir(current_dir):
     for vcs_subdir in vcs_subdirs:
-        candidate = vcs_candidate_dir(current_dir, vcs_subdir)
-        if os.path.exists(candidate):
+        candidate = "/".join([*current_dir, vcs_subdir])
+        if path.exists(candidate):
             return vcs_subdir
     return ""
 
 
-def vcs_candidate_dir(current_dir, vcs_subdir):
-    dir_string = "/".join(current_dir)
-    vcs_candidate = os.path.join(dir_string, vcs_subdir)
-    return vcs_candidate
+def branch_name(repo_path, vcs_subdir):
+    vcs_obj = path.join(repo_path, vcs_subdir)
 
-
-def get_branch_name(repo_path, vcs_subdir):
-    try:
-        vcs_obj = os.path.join(repo_path, vcs_subdir)
-
-        if os.path.isdir(vcs_obj):
-            head_filepath = os.path.join(vcs_obj, "HEAD")
-            with open(head_filepath) as head_file:
-                ref_line = head_file.readline().strip()
-                branch_name = ref_line.split("/")[-1]
-                return branch_name
-        elif os.path.isfile(vcs_obj):
-            return "SUB"
-        else:
-            return ""
-    except FileNotFoundError:
+    if vcs_subdir == ".git":
+        return git_branch_name(repo_path, vcs_subdir)   
+    else:
         return ""
+
+
+def git_branch_name(repo_path, vcs_subdir):
+    repo = Repo(repo_path)
+   
+    if repo.is_dirty:
+        fmt = f"{repo.active_branch.name}*"
+    else:
+        fmt = f"{repo.active_branch.name}"
+
+    return fmt.format()
+
+
+def virtual_env(pwd):
+
+    # might be in an activated venv
+    if sys.prefix != sys.base_prefix:
+        venv_name = os.path.basename(sys.prefix)
+        return format_name(venv_name, "{}|{}|{}")
+
+    # might be in a directory that contains a venv
+    else:
+
+        pwd = os.path.expanduser(pwd)
+        _, subdirs, _ = next(os.walk(pwd))
+
+        for subdir in subdirs:
+            f = os.path.join(subdir, "bin", "activate")
+            if os.path.isfile(f):
+                return format_name("ENV", "{}!!{}!!{}")
+
+        return ""
+
+
+# Format functions
+
+def format_identity(username, hostname):
+    if username != MY_USERNAME or hostname != MY_HOSTNAME:
+        return f"{username}@{hostname}:"
+    else:
+        return ""
+
+
+def format_pwd(pwd):
+    homedir = os.path.expanduser('~')
+    return pwd.replace(homedir, '~', 1)
 
 
 def format_repo_name(repo_name):
@@ -145,97 +169,32 @@ def name_color(name):
     return colors[color_index]
 
 
-def limit_path_length(path, path_length, second_half_fraction):
-
-    formatted = path
-
-    if len(path) > path_length:
-
-        usable_length = path_length - len(ELLIPSIS)
-
-        first_half_fraction = 1 - second_half_fraction
-        second_half_fraction = second_half_fraction
-
-        first_part_length = rnd(usable_length * first_half_fraction)
-        second_part_length = rnd(usable_length * second_half_fraction)
-
-        first_part = path[:first_part_length]
-        second_part = path[-1 * second_part_length:]
-
-        formatted = ''.join([first_part, ELLIPSIS, second_part])
-
-    return formatted
-
-
-def rnd(arg):
-    return int(round(arg))
-
-
-def get_virtual_env(pwd):
-
-    # might be in an activated venv
-    if sys.prefix != sys.base_prefix:
-        venv_name = os.path.basename(sys.prefix)
-        return format_name(venv_name, "{}|{}|{}")
-
-    # might be in a directory that contains a venv
-    else:
-
-        pwd = os.path.expanduser(pwd)
-        _, subdirs, _ = next(os.walk(pwd))
-
-        for subdir in subdirs:
-            f = os.path.join(subdir, "bin", "activate")
-            if os.path.isfile(f):
-                return format_name("ENV", "{}!!{}!!{}")
-
-        return ""
-
-
 ###############################################################################
 # Main                                                                        #
 ###############################################################################
 
 def main():
 
-    hostname = gethostname()
-    username = os.environ['USER']
-
+    # Extract data
     try:
         pwd = os.getcwd()
     except OSError:
         pwd = "DNE"
 
+    hostname = gethostname()
+    username = os.getenv('USER')
     repo, repo_path, vcs_subdir = repo_information(pwd)
-    repo = limit_path_length(repo, MAX_REPO_LENGTH, REPO_NAME_FRACTION)
+    branch = branch_name(repo_path, vcs_subdir) if repo else ""
+    virtualenv = virtual_env(pwd)
 
-    branch = get_branch_name(repo_path, vcs_subdir) if repo else ""
-    branch = limit_path_length(branch, MAX_BRANCH_LENGTH, BRANCH_FRACTION)
-
-    # need to get length of repo string before adding color chars
-    unformatted_repo_length = len(repo) + 2 if repo else 0
-    unformatted_branch_length = len(branch) + 2 if branch else 0
-    pwd_length = MAX_PROMPT_LENGTH - unformatted_repo_length - unformatted_branch_length
-
+    # Format pieces for display
+    identity = format_identity(username, hostname)
+    pwd = format_pwd(pwd)
     repo = format_repo_name(repo)
     branch = format_branch_name(branch)
-
-    homedir = os.path.expanduser('~')
-    pwd = pwd.replace(homedir, '~', 1)
-
-    virtualenv = get_virtual_env(pwd)
-
-    if repo:
-        pwd = limit_path_length(pwd, pwd_length, 1.0)
-    else:
-        pwd = limit_path_length(pwd, pwd_length, 0.75)
-
-    # if we are not in "normal" user+host for this box, use default
-    if username != MY_USERNAME or hostname != MY_HOSTNAME:
-        prompt = '{0}@{1}:{2}{3}'.format(username, hostname, pwd, CURSOR)
-    else:
-        prompt = ''.join([repo, FGRN, pwd, RS, branch, virtualenv, FYEL, CURSOR, RS])
-
+    
+    # Combine into display
+    prompt = ''.join([os.linesep, identity, repo, FGRN, pwd, RS, branch, virtualenv, FYEL, CURSOR, RS, "\\n"])
     print(prompt)
 
 
