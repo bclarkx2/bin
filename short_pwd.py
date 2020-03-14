@@ -194,7 +194,7 @@ def main():
     branch = format_branch_name(branch)
     
     # Combine into display
-    prompt = ''.join([os.linesep, identity, repo, FGRN, pwd, RS, branch, virtualenv, FYEL, CURSOR, RS, "\\n"])
+    prompt = ''.join([os.linesep, identity, repo, FGRN, pwd, RS, branch, virtualenv, os.linesep, FYEL, CURSOR, RS])
     print(prompt)
 
 
