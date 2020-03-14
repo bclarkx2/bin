@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+script="$1"
+
+if [[ -z "$script" ]] ; then
+	echo "Missing new script name" >2
+fi
+
+touch "$script" && \
+printf "#!/usr/bin/env bash \
+
+" > "$script"
