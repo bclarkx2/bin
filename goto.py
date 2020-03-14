@@ -2,12 +2,12 @@
 
 """command line utility to navigate file structure using bookmarks
 
-go is a tool that allows you to quickly move between directories.
+goto is a tool that allows you to quickly move between directories.
 The basic workflow is as follows:
 
-1. Edit the ~/.config/go/info JSON files to set up the shortcuts you want
-2. Use go -s <root> to set the current root
-3. Use go <shortcut> to cd to the shortcut in the current root dir
+1. Edit the ~/.config/goto/info JSON files to set up the shortcuts you want
+2. Use goto -s <root> to set the current root
+3. Use goto <shortcut> to cd to the shortcut in the current root dir
 
 All shortcuts are given relative to root dir.
 
@@ -23,7 +23,7 @@ you have a number of directories with similar file structure. For example,
 if you have multiple branches of the same repo checked out.
 
 info/onx_defaults.json: this file contains a variety of common shortcut
-paths. These can be accessed in any ONX root dir.
+paths. These can be accessed in any root dir.
 """
 
 ###############################################################################
@@ -41,13 +41,13 @@ import subprocess
 # Constants                                                                   #
 ###############################################################################
 
-GO_DIR = os.path.expanduser("~/.config/go")
+GOTO_DIR = os.path.expanduser("~/.config/goto")
 
-SETUP_DIR = os.path.join(GO_DIR, "setup")
+SETUP_DIR = os.path.join(GOTO_DIR, "setup")
 CONFIG_FILEPATH = os.path.join(SETUP_DIR, "config.json")
 ROOTS_FILEPATH = os.path.join(SETUP_DIR, "roots.json")
 
-INFO_DIR = os.path.join(GO_DIR, "info")
+INFO_DIR = os.path.join(GOTO_DIR, "info")
 
 PRINT_ARGS = ["configs", "roots"]
 
@@ -83,7 +83,7 @@ def get_parser(parser_type):
     group = parser.add_mutually_exclusive_group()
 
     group.add_argument("-s", "--set",
-                       help="set the current ONX root directory")
+                       help="set the current root directory")
 
     group.add_argument("-p", "--print",
                        help="print available options",
@@ -319,7 +319,7 @@ def ensure_file(path):
 def write_config_files():
 
     # ensure all directories and files are present
-    ensure_dir(GO_DIR)
+    ensure_dir(GOTO_DIR)
     ensure_dir(SETUP_DIR)
     ensure_dir(INFO_DIR)
 
@@ -327,7 +327,7 @@ def write_config_files():
     ensure_file(ROOTS_FILEPATH)
 
     # write configs
-    configs = {"current_root": "go"}
+    configs = {"current_root": "goto"}
     save_configs(configs)
 
     # write roots file
@@ -337,10 +337,10 @@ def write_config_files():
             "name": "common",
             "path": ""
         },
-        "go": {
+        "goto": {
             "defaults": ["common"],
-            "name": "go",
-            "path": "~/.config/go"
+            "name": "goto",
+            "path": "~/.config/goto"
         }
     }
     with open(ROOTS_FILEPATH, 'w') as roots_file:
@@ -355,14 +355,14 @@ def write_config_files():
     with open(common_info_path, 'w') as common_info_file:
         json.dump(info, common_info_file, sort_keys=True, indent=4)
 
-    # write go info file
+    # write goto info file
     info = {
         "info": "info",
         "setup": "setup"
     }
-    go_info_path = os.path.join(INFO_DIR, "go.json")
-    with open(go_info_path, 'w') as go_info_file:
-        json.dump(info, go_info_file, sort_keys=True, indent=4)
+    goto_info_path = os.path.join(INFO_DIR, "goto.json")
+    with open(goto_info_path, 'w') as goto_info_file:
+        json.dump(info, goto_info_file, sort_keys=True, indent=4)
 
 
 def find_applicable_complete_options(args, roots, configs):
