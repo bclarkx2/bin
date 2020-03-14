@@ -95,7 +95,7 @@ def branch_name(repo_path, vcs_subdir):
     if vcs_subdir == ".git":
         return git_branch_name(repo_path, vcs_subdir)   
     else:
-        return ""
+        return "SVN"
 
 
 def git_branch_name(repo_path, vcs_subdir):
