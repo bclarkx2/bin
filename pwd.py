@@ -100,8 +100,9 @@ def branch_name(repo_path, vcs_subdir):
 
 def git_branch_name(repo_path, vcs_subdir):
     repo = Repo(repo_path)
-   
-    if repo.is_dirty:
+    cmd_output = subprocess.run(["git", "status", "-s"], stdout=subprocess.PIPE)
+
+    if len(cmd_output.stdout) > 0:
         fmt = f"{repo.active_branch.name}*"
     else:
         fmt = f"{repo.active_branch.name}"
