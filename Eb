@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-vim ~/.bashrc
+ed="${EDITOR-'vim'}"
+
+"$ed" ~/.bashrc
