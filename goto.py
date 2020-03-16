@@ -182,8 +182,12 @@ def print_information(print_arg, roots, configs):
 
     printables = get_printables(roots)
 
+    print(f"{print_arg}")
+
     if print_arg == "all":
-        return PRINT_ARGS + printables
+        current_root = configs['current_root']
+        root_obj = get_info(roots[current_root]['name'])
+        return json.dumps(root_obj, sort_keys=True, indent=4)
     elif print_arg == "configs":
         return json.dumps(configs, sort_keys=True, indent=4)
     elif print_arg == "roots":
@@ -198,9 +202,9 @@ def print_information(print_arg, roots, configs):
         return "Invalid print arg: {}".format(print_arg)
 
 
-def all_information_dict(print_arg, roots):
-    if print_arg not in roots:
-        return "{} is not a root!".format(print_arg)
+def all_information_dict(print_arg, roots, configs):
+    if print_arg == "all":
+        print_arg = configs['current_root']
 
     root_obj = roots[print_arg]
 
@@ -212,9 +216,9 @@ def all_information_dict(print_arg, roots):
     return shortcuts
 
 
-def all_print_information(print_arg, roots):
+def all_print_information(print_arg, roots, configs):
 
-    shortcuts = all_information_dict(print_arg, roots)
+    shortcuts = all_information_dict(print_arg, roots, configs)
     return json.dumps(shortcuts, sort_keys=True, indent=4)
 
 
@@ -466,7 +470,7 @@ def main():
 
     # print all mode
     elif args.all:
-        all_shortcuts = all_print_information(args.first, roots)
+        all_shortcuts = all_print_information(args.first, roots, configs)
         print(all_shortcuts)
 
     # create new root mode
