@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+session="${1:-0}"
+
+tmux attach -t "$session"
