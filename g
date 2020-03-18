@@ -32,6 +32,11 @@ case $arg in
 		shift
 		;;
 
+	"co")
+		command="checkout"
+		shift
+		;;
+
 	"cm")
 		command="commit -m"
 		shift
@@ -41,6 +46,11 @@ case $arg in
 		command="fetch"
 		shift
 		;;	
+
+	"l")
+		command="log"
+		shift
+		;;
 esac
 
 if [[ ! -z ${command+x} ]] ; then
