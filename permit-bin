@@ -1,3 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 sudo chmod +x -R "$HOME/bin"
+sudo chmod -x "$HOME/bin/README.md"
