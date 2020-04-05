@@ -10,3 +10,5 @@ touch "$script" && \
 printf "#!/usr/bin/env bash \
 
 " > "$script"
+
+sudo chmod +x "$script"
