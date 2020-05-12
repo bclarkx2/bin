@@ -1,0 +1,23 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: disk-usage [dir] [depth]"
+}
+
+if [[ "$1" = '--help' ]]; then
+  usage
+  exit 0
+fi
+
+dir="${1:-/}"
+depth="${2:-1}"
+
+du              \
+  -h            \
+  -d "${depth}" \
+  "${dir}"      \
+  2>/dev/null   \
+  |             \
+sort            \
+  -h
+
