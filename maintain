@@ -1,4 +1,11 @@
 #!/bin/bash
 
 sudo apt update
+
+read -p 'List?'
+
+sudo apt list --upgradeable
+
+read -p 'Upgrade?'
+
 sudo apt upgrade
