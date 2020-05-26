@@ -1,0 +1,10 @@
+#!/bin/bash 
+
+window_name="$1"
+open_cmd="$2"
+
+wmctrl -a "${window_name}"
+
+if (( $? != 0 )); then
+  "${open_cmd}"
+fi
