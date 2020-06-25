@@ -2,13 +2,15 @@
 
 script="$1"
 
-if [[ -z "$script" ]] ; then
+if [[ -z "${script}" ]] ; then
 	echo "Missing new script name" >2
 fi
 
-touch "$script" && \
+touch "${script}" && \
 printf "#!/usr/bin/env bash \
 
-" > "$script"
+" > "${script}"
 
-sudo chmod +x "$script"
+sudo chmod +x "${script}"
+
+"${EDITOR}" "${script}"
