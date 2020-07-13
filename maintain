@@ -9,3 +9,7 @@ sudo apt list --upgradeable
 read -p 'Upgrade?'
 
 sudo apt upgrade
+
+read -p 'Autoremove?'
+
+sudo apt autoremove
