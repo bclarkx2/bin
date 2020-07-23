@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Retrieves the name of the current pulseaudio default sink
+get_current_sink() {
+  sink_label='Default sink name: '
+  pacmd stat | grep "${sink_label}" | sed -n -e "s/${sink_label}//p"
+}
+
+# Retries newline delimited list of all available pulseaudio sinks
+get_sinks() {
+  pacmd list-sinks | grep 'name: ' | sed -n -e 's/\s*name: //p' | tr -d "<>"
+}
+
+# Find index of an item in an array. Blank if item doesn't appear
+# in the array
+get_index() {
+  local -n arr="$1"
+  local -r item="$2"
+
+  for i in "${!arr[@]}"; do 
+    if [[ "${arr[i]}" == "${item}" ]]; then
+      echo "${i}"
+    fi
+  done
+}
+
+# First, find where the current default sink falls in the list
+# of available sinks
+IFS=$'\n' sinks=($(get_sinks))
+current_sink="$(get_current_sink)"
+current_index="$(get_index sinks "${current_sink}")"
+
+# Then, increment by one, looping around if necessary
+num_sinks=${#sinks[@]}
+new_index=$(( ( current_index + 1 ) % num_sinks ))
+
+# Report on the change to stdout
+echo "old: ${sinks[current_index]}"
+echo "new: ${sinks[new_index]}"
+
+# Set new default sink
+pacmd set-default-sink "${new_index}"
