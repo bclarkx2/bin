@@ -1,15 +1,72 @@
 #!/bin/bash
 
-sudo apt update
+usage() {
+  printf '%s\n' "Usage: maintain [-h] [-y]
+Keep apt packages up-to-date.
 
-read -p 'List?'
+where:
+  -h, --help  - show this help text
+  -y, --yes   - perform all steps w/o confirmation"
+}
 
-sudo apt list --upgradeable
+maintain() {
+  local auto_accept="$1"
 
-read -p 'Upgrade?'
+  if [[ "${auto_accept}" == 'true' ]]; then
 
-sudo apt upgrade
+    sudo apt update
+    sudo apt upgrade -y
+    sudo apt autoremove -y
 
-read -p 'Autoremove?'
+  else 
 
-sudo apt autoremove
+    sudo apt update
+    
+    read -p 'List?'
+    sudo apt list --upgradeable
+   
+    read -p 'Upgrade?'
+    sudo apt upgrade
+    
+    read -p 'Autoremove?'
+    sudo apt autoremove
+
+  fi
+}
+
+# Option parsing
+declare PARAMS=""
+declare AUTO_ACCEPT='false'
+while (( "$#" )); do
+  case "$1" in 
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    -y|--yes)  # set autoaccept policy
+      AUTO_ACCEPT='true'
+      break
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} maintain"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# Freeze configuration flags
+readonly AUTO_ACCEPT
+
+maintain "${AUTO_ACCEPT}"
