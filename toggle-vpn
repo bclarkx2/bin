@@ -1,0 +1,16 @@
+#!/usr/bin/env bash 
+
+# Get name of VPN to toggle
+vpn="${1:-${DEFAULT_VPN}}"
+
+# Find current status
+output="$(nmcli connection show --active "${vpn}")"
+if [[ -n "${output}" ]]; then
+  action='down'
+else 
+  action='up'
+fi
+
+# Toggle!
+nmcli connection "${action}" "${vpn}"
+
