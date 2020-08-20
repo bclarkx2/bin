@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+nmcli networking off
+nmcli networking on
