@@ -1,10 +1,85 @@
 #!/bin/bash 
 
-window_name="$1"
-open_cmd="$2"
+usage() {
+  printf '%s\n' "Usage: switch-to [-hcn] open_cmd
+Switch focus to a particular X window, or open a new one if no matches are found.
 
-wmctrl -a "${window_name}"
+where:
+  -h, --help  - show this help text
+  -n, --name  - the window title of the window to switch focus to
+  -c, --class - the WM_CLASS of the window to switch focus to"
+}
 
-if (( $? != 0 )); then
-  "${open_cmd}"
+main() {
+  # Switch focus using either window name or class
+  if [[ -n "${WINDOW_NAME}" ]]; then
+    wmctrl -a "${WINDOW_NAME}"
+  elif [[ -n "${WM_CLASS}" ]]; then
+    wmctrl -xa "${WM_CLASS}"
+  fi
+
+  # If it didn't switch, use the given cmd to open a new window
+  if (( "$?" != 0 )); then
+    ${OPEN_CMD}
+  fi
+}
+
+# Option parsing
+declare PARAMS=''
+declare WINDOW_NAME
+declare WM_CLASS
+declare OPEN_CMD
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    -n|--name)  # set window name
+      WINDOW_NAME="$2"
+      shift 2
+      ;;
+    -c|--class) # set WM_CLASS
+      WM_CLASS="$2"
+      shift 2
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} '$1'"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# parse positional args
+OPEN_CMD="$1"
+
+# validate parameters
+if [[ -z "${OPEN_CMD}" ]]; then
+  echo "Error: missing 'open_cmd' positional parameter" 1>&2
+  usage
+  exit 1
 fi
+
+if [[ -n "${WINDOW_NAME}" && -n "${WM_CLASS}" ]]; then
+  echo "Error: cannot set both '--name' and '--class' flags" 1>&2
+  usage
+  exit 1
+fi
+
+# Freeze configuration flags
+readonly WINDOW_NAME WM_CLASS OPEN_CMD
+
+main
+
