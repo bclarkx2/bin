@@ -39,4 +39,12 @@ echo "old: ${sinks[current_index]}"
 echo "new: ${sinks[new_index]}"
 
 # Set new default sink
-pacmd set-default-sink "${new_index}"
+output="$(pacmd set-default-sink "${new_index}")"
+
+# Send alert message
+notify-send \
+  -t 1000 \
+  'toggle-audio-sink' \
+"audio sink: ${sinks[new_index]}
+message: ${output}"
+
