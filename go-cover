@@ -1,5 +1,21 @@
 #!/usr/bin/env bash 
 
-go test -coverprofile=cover.out "$@" && \
-  go tool cover -html=cover.out && \
-  rm cover.out
+open_temp() {
+  local -r name="$1"
+
+  f="$(mktemp "/tmp/$1.XXXXXX")"
+  exec 3>"${f}"
+  rm "${f}"
+
+  echo "${f}"
+}
+
+intermediate="$(open_temp 'cover.out.tmp')"
+final="$(open_temp 'cover.out')"
+
+
+go test -coverprofile="${intermediate}" "$@"
+
+grep -v "Mock.go" "${intermediate}" > "${final}"
+
+go tool cover -html="${final}"
