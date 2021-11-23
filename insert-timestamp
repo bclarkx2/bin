@@ -1,0 +1,9 @@
+#!/usr/bin/env bash 
+
+# Set parameters
+delay='0.2'
+timestamp="$(date --utc --rfc-3339=seconds)"
+windowid="$(xdotool getwindowfocus)"
+
+# Execute insert
+sleep "${delay}" && xdotool windowactivate --sync "${windowid}" type "${timestamp}"
