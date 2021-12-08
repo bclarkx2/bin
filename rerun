@@ -1,6 +1,9 @@
 #!/usr/bin/env bash 
 
-inotifywait -e close_write,moved_to,create -m . |
+cmd="$1"
+pattern="$2"
+
+inotifywait --exclude="${pattern}" -e close_write,moved_to,create -m . |
 while read -r directory events filename; do
-  "$@"
+  bash -c "${cmd}"
 done
