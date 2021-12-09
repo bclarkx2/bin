@@ -2,7 +2,7 @@
 
 # Set parameters
 delay='0.2'
-timestamp="$(date --utc --rfc-3339=seconds)"
+timestamp="$(date --utc '+%Y-%m-%dT%H:%M:%SZ')"
 windowid="$(xdotool getwindowfocus)"
 
 # Execute insert
