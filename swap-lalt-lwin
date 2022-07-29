@@ -14,6 +14,7 @@ main() {
   # add alt-win setting to the end if it isn't already in the list
   if ! [[ ${current} == *${OPTION}* ]] ; then 
     new="${current} ${OPTION}"
+    msg="Swapping Left Alt with Left Win"
   # otherwise, delete it from the list
   else 
     for val in ${current} ; do 
@@ -22,6 +23,7 @@ main() {
       fi
       new="${new} ${val}"
     done
+    msg="Unswapping Left Alt with Left Win"
   fi
 
   # trim leading spaces from concatenation above
@@ -32,6 +34,9 @@ main() {
   
   # write to dconf database
   gsettings set "${SCHEMA}" "${KEY}" "${new}"
+
+  # send desktop notification
+  notify-send -t 2000 'Left Alt/Win' "${msg}"
 }
 
 main
