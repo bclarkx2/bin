@@ -1,0 +1,42 @@
+#!/usr/bin/env bash 
+
+# gsettings config names
+SCHEMA='org.gnome.desktop.input-sources'
+KEY='xkb-options'
+OPTION='altwin:swap_lalt_lwin'
+
+# toggle whether left alt and left win are switched
+main() {
+  # pull the current setting and make it a space-delimited list
+  # I don't think config values will have spaces, but YOLO
+  current="$(gsettings get "${SCHEMA}" "${KEY}" | tr -d "[]',")"
+
+  # add alt-win setting to the end if it isn't already in the list
+  if ! [[ ${current} == *${OPTION}* ]] ; then 
+    new="${current} ${OPTION}"
+    msg="Swapping Left Alt with Left Win"
+  # otherwise, delete it from the list
+  else 
+    for val in ${current} ; do 
+      if [[ "${val}" == "${OPTION}" ]] ; then
+        continue
+      fi
+      new="${new} ${val}"
+    done
+    msg="Unswapping Left Alt with Left Win"
+  fi
+
+  # trim leading spaces from concatenation above
+  new="$(echo "${new}" | sed -e 's/^[[:space:]]*//')"
+
+  # format as gsettings value array 
+  new="$(echo "['${new}']" | sed -e "s/ /\', \'/")"
+  
+  # write to dconf database
+  gsettings set "${SCHEMA}" "${KEY}" "${new}"
+
+  # send desktop notification
+  notify-send -t 2000 'Left Alt/Win' "${msg}"
+}
+
+main
