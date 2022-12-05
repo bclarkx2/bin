@@ -1,0 +1,3 @@
+#!/usr/bin/env bash 
+
+ykman oath accounts list | cut -f1 -d':'

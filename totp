@@ -1,0 +1,62 @@
+usage() {
+  printf '%s\n' "Usage: totp [-h] account
+Manage Yubikey TOTP codes.
+
+where:
+  -h, --help    - show this help text
+  account       - extract a TOTP code for account"
+}
+
+main() {
+  local -r account="$1"
+
+  # Read code from yubikey
+  code="$(ykman oath accounts code "${account}" -s)"
+  if [[ $? != 0 ]] ; then 
+    exit 1
+  fi
+
+  # Copy to clipboard
+  echo "${code}" | xclip -sel clip
+
+  # Print code 
+  echo "TOTP code for "${account}" copied to X clipboard"
+  echo "${code}"
+}
+
+# Option parsing
+declare PARAMS=""
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# Parse positional params
+account="$1"
+if [[ -z "${account}" ]] ; then 
+  echo "Missing required positional param: account" >&2
+  usage
+  exit 1
+fi
+
+main "${account}"
