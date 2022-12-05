@@ -1,9 +1,63 @@
 #!/usr/bin/env bash 
 
-cmd="$1"
-pattern="$2"
+usage() {
+  printf '%s\n' "Usage: rerun [-h] CMD PATTERN
+rerun detects close_write events in the current directory for files matching
+the supplied PATTERN and executes the specified shell CMD whenever one is
+detected.
 
-inotifywait --exclude="${pattern}" -e close_write,moved_to,create -m . |
-while read -r directory events filename; do
-  bash -c "${cmd}"
+where:
+  -h, --help  - show this help text
+  CMD         - the shell command to run 
+  PATTERN     - regex identifying files to watch"
+}
+
+main() {
+  inotifywait -e close_write -m . |
+  while read -r directory events filename; do
+    if [[ "${filename}" =~ ${PATTERN} ]] ; then 
+      echo "${events}: ${filename}"
+      bash -c "${CMD}"
+    fi
+  done
+
+}
+
+# Option parsing
+declare PARAMS=""
+declare CMD
+declare PATTERN
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
 done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# parse positional args
+CMD="$1"
+PATTERN="$2"
+
+# Freeze configuration flags
+readonly CMD PATTERN
+
+main
+
