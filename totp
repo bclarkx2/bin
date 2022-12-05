@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage() {
   printf '%s\n' "Usage: totp [-h] account
 Manage Yubikey TOTP codes.
