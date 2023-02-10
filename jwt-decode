@@ -1,0 +1,78 @@
+#!/usr/bin/env bash 
+
+usage() {
+  printf '%s\n' "Usage: jwt-decode [token]
+jwt-decode is a tool that decodes a JWT token presented
+either as a command line argument or on stdin.
+
+The header and payload of the token will be displayed on
+stdout in JSON format.
+
+Note: the tool will ignore the signature on the JWT, so
+just because it is decoded with this tool doesn't necessarily
+mean that it has a valid signature.
+
+where:
+- token  - a valid JWT"
+}
+
+# Parse the token
+main() {
+  printf '%s' "${TOKEN}" | # throw the token into the pipeline
+    jq -R 'split(".") | .[0:2] | .[]' |  # split the header and payload into base64 strings
+    tr -d '"' | # strip JSON quotes
+    xargs -n1 bash -c 'pad $1 | base64 --decode | printf "%s\\n" "$(cat -)"' _ | # decode 
+    jq --slurp .  # reconstitute a JSON object
+}
+
+# pad adds any missing padding to a base64 encoded string
+pad() {
+  local -r str="$1"
+  rem=$((${#str} % 4))
+  padded="${str}"
+  if [ $rem -eq 2 ]; then padded="${str}"==
+  elif [ $rem -eq 3 ]; then padded="${str}"=
+  fi
+  printf '%s' "${padded}"
+}
+export -f pad
+
+# Option parsing
+declare PARAMS=""
+declare TOKEN=""
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# Extract the token from either the command line or stdin
+if [ "$#" -eq 0 ] ; then 
+  TOKEN="$(cat -)"
+elif [ ! -z "$1" ] ; then 
+  TOKEN="$1"
+fi
+
+# Freeze configuration flags
+readonly TOKEN
+
+main
