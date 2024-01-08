@@ -1,0 +1,60 @@
+#!/usr/bin/env bash 
+
+usage() {
+  printf '%s\n' "Usage: readenv env_file [-h]
+readenv reads an env file and exports each line as an environment variable.
+
+You can use it to pull values in an env file into your current shell. If you
+wrap the whole call in a subshell, this provides a handy way to use a local
+.env file to customize runtime environment variables for a command without
+leaking those variables into your current shell.
+
+Example:
+  (source readenv .env | ./my_script.sh)
+
+where:
+  -h, --help  - show this help text
+  env_file    - path to the env file"
+}
+
+
+# Option parsing
+declare PARAMS=""
+declare ENV_FILE=''
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+ENV_FILE="$1"
+if [[ -z "${ENV_FILE}" ]]; then
+  echo "Missing env file" >&2
+  usage
+  exit 1
+fi
+
+# Freeze configuration flags
+readonly ENV_FILE
+
+# Export each line in the env file as an environment variable
+export $(cat "${ENV_FILE}" | xargs)
