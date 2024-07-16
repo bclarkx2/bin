@@ -1,0 +1,48 @@
+#!/bin/bash 
+
+usage() {
+  printf '%s\n' "Usage: git-files [-h]
+git-files lists the files affected by a PR in a git repository.
+
+where:
+  -h, --help  - show this help text"
+}
+
+main() {
+  base_branch="$(gh pr status --json baseRefName --jq .currentBranch.baseRefName)"
+  git diff --name-only "$base_branch" \
+    | grep -v '^vendor/' # exclude vendor directory
+}
+
+# Option parsing
+declare PARAMS=""
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# Freeze configuration flags
+readonly SOME_FLAG
+
+main
+
