@@ -57,4 +57,4 @@ fi
 readonly ENV_FILE
 
 # Export each line in the env file as an environment variable
-export $(cat "${ENV_FILE}" | xargs)
+export $(grep -v '^#' "${ENV_FILE}" | xargs -d '\n')
