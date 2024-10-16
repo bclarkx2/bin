@@ -1,0 +1,84 @@
+#!/bin/bash
+
+usage() {
+  printf '%s\n' "Usage: switch-to-wayland [-h]
+switch-to-wayland switches to a specific window using gdbus.
+Only works with GNOME Shell, but does work with Wayland display
+server.
+
+where:
+  -h, --help  - show this help text
+  -c, --class - set the window class to switch to"
+}
+
+main() {
+  # Pass a message to the window manager to activate the window with the
+  # provided WM_CLASS.
+  result="$(gdbus call \
+    --session \
+    --dest org.gnome.Shell \
+    --object-path /org/gnome/Shell \
+    --method org.gnome.Shell.Eval "
+global
+  .get_window_actors()
+  .map(a=>a.meta_window)
+  .find((w) => {
+    return w.get_wm_class() === '${WM_CLASS}'
+  })
+  .activate(0)")"
+
+  # If the window was not found, open the application using the provided
+  # command
+  if ! grep -q '^(true,' <<< "${result}" ; then
+    "${OPEN_CMD}"
+  fi
+}
+
+# Option parsing
+declare PARAMS=''
+declare WM_CLASS=''
+declare OPEN_CMD=''
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    -c|--class) # set the window class
+      WM_CLASS=$2
+      shift 2
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# parse positional arguments
+OPEN_CMD="$1"
+
+# validate parameters
+if [[ -z "${OPEN_CMD}" ]]; then
+  echo "Missing required argument: OPEN_CMD" >&2
+  usage
+  exit 1
+fi
+
+# Freeze configuration flags
+readonly WM_CLASS OPEN_CMD
+
+main "$@"
+
