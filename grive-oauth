@@ -4,6 +4,7 @@
 json_file=${GRIVE_OAUTH_JSON:-"grive.json"}
 target=${GRIVE_TARGET:-"/home/brian/"}
 is_dry_run=0
+is_auth=0
 
 usage="$(basename "$0") [-hd] [-f json_file] -- program to run grive using oauth client info
 
@@ -11,10 +12,11 @@ where:
     -h  show this help text
     -d  dry run
     -f  <file> use <file> as the file path for the oauth client info JSON file
-    -p  <dir> use <dir> as the directory to backup"
+    -p  <dir> use <dir> as the directory to backup
+    -a  authorize"
 
 # Parse options
-while getopts ":f:dhp:" opt; do
+while getopts ":f:dahp:" opt; do
     case "${opt}" in
 
         # id [f]ile
@@ -28,29 +30,34 @@ while getopts ":f:dhp:" opt; do
             ;;
 
         # help
-	h)
-	    echo "$usage" >&2
-	    exit 1
-	    ;;
+        h)
+            echo "$usage" >&2
+            exit 1
+            ;;
 
         # target
-	p)
-	    target=$OPTARG
-	    ;;
+        p)
+            target=$OPTARG
+            ;;
+
+        # auth
+        a)
+            is_auth=1
+            ;;
 
         # missing argument
         :)
-	    echo "Missing argument for -$OPTARG"
-	    echo "$usage" >&2
-	    exit 1
-	    ;;
+            echo "Missing argument for -$OPTARG"
+            echo "$usage" >&2
+            exit 1
+            ;;
 
         # unrecognized option
-	*)
-	    echo "Unknown option: -$OPTARG"
-	    echo "$usage" >&2
-	    exit 1
-	    ;;
+        *)
+            echo "Unknown option: -$OPTARG"
+            echo "$usage" >&2
+            exit 1
+            ;;
 
     esac
 done
@@ -75,6 +82,10 @@ fi
 
 # Format argument string
 args="-p $target --id $client_id --secret $client_secret"
+
+if [[ "${is_auth}" -eq 1 ]]; then
+  args="${args} -a"
+fi
 
 # Execute
 if [[ "$is_dry_run" -eq 1 ]]; then
