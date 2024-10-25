@@ -31,6 +31,10 @@ maintain() {
     read -p 'Autoremove?'
     sudo apt autoremove
 
+    if [ -x purge-residual-config ] ; then
+      read -p 'Purge residual config?'
+      purge-residual-config
+    fi
   fi
 }
 
