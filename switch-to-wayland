@@ -30,7 +30,7 @@ global
   # If the window was not found, open the application using the provided
   # command
   if ! grep -q '^(true,' <<< "${result}" ; then
-    "${OPEN_CMD}"
+    bash -c "${OPEN_CMD}"
   fi
 }
 
@@ -68,7 +68,7 @@ done
 eval set -- "${PARAMS}"
 
 # parse positional arguments
-OPEN_CMD="$1"
+OPEN_CMD="$@"
 
 # validate parameters
 if [[ -z "${OPEN_CMD}" ]]; then
