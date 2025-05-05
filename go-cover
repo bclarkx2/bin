@@ -1,5 +1,24 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 
+# go-cover: Run Go tests with coverage and generate reports
+# Supports two subcommands: 'total' and 'html'
+
+# Exit immediately if a command fails.
+set -e
+
+# Display usage information
+usage() {
+  echo "Usage: $(basename "$0") COMMAND [packages...]"
+  echo
+  echo "Commands:"
+  echo "  total    Calculate and display total test coverage percentage"
+  echo "  html     Open a web browser with the HTML coverage report"
+  echo
+  echo "If no packages are specified, the current package will be tested."
+  exit 1
+}
+
+# Create a temporary file and return its path.
 open_temp() {
   local -r name="$1"
 
@@ -10,12 +29,65 @@ open_temp() {
   echo "${f}"
 }
 
-intermediate="$(open_temp 'cover.out.tmp')"
-final="$(open_temp 'cover.out')"
+# Run tests and generate coverage report
+generate_coverage() {
+  local packages="$@"
+  local intermediate="$(open_temp 'cover.out.tmp')"
+  local final="$(open_temp 'cover.out')"
 
+  # Run tests with coverage
+  go test -coverprofile="${intermediate}" ${packages} 1> /dev/null
 
-go test -coverprofile="${intermediate}" "$@"
+  # Filter out mock files
+  grep -v "_mock.go" "${intermediate}" > "${final}"
+  
+  echo "${final}"
+}
 
-grep -v "Mock.go" "${intermediate}" > "${final}"
+# Show total coverage percentage
+show_total() {
+  local packages="$@"
+  local coverage_file=$(generate_coverage ${packages})
+  
+  report="$(go tool cover -func="${coverage_file}")"
+  total="$(echo "${report}" | tail -n 1 | awk '{print $3}')"
+  echo "Total coverage: ${total}"
+}
 
-go tool cover -html="${final}"
+# Open HTML coverage report in browser
+show_html() {
+  local packages="$@"
+  local coverage_file=$(generate_coverage ${packages})
+  
+  go tool cover -html="${coverage_file}"
+}
+
+main() {
+  # Check if command is provided
+  if [ $# -eq 0 ]; then
+    usage
+  fi
+
+  # Parse command
+  command="$1"
+  shift
+
+  case "${command}" in
+    total)
+      show_total "$@"
+      ;;
+    html)
+      show_html "$@"
+      ;;
+    -h|--help|help)
+      usage
+      ;;
+    *)
+      echo "Error: Unknown command '${command}'"
+      usage
+      ;;
+  esac
+}
+
+# Call the main function with all arguments
+main "$@"
