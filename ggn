@@ -1,0 +1,3 @@
+#!/usr/bin/env bash 
+
+go get github.com/nicheinc/"$@" && go mod tidy && go mod vendor

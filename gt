@@ -1,0 +1,3 @@
+#!/usr/bin/env bash 
+
+go build ./... && go test -cover -race ./...
