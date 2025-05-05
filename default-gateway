@@ -1,0 +1,3 @@
+#!/usr/bin/env bash 
+
+ip route | grep default | sed -rn 's/default via ([^ ]+).*/\1/p'
