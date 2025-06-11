@@ -1,0 +1,120 @@
+#!/bin/bash
+
+usage() {
+  printf '%s\n' "Usage: install-go [-h|--help] [-d|--download] [-t|--tar <tarball>] [-g|--goroot <path>]
+install-go installs or updates the Go SDK on a Linux system.
+
+where:
+  -h, --help  - show this help text
+  -d, --download - download the latest Go tarball from the official site
+  -t, --tar <tarball> - specify the path to the Go tarball (default: ~/downloads/go.latest.linux-amd64.tar.gz)
+  -g, --goroot <path> - specify a custom GOROOT path (default: /usr/local/go)"
+}
+
+main() {
+  # Ensure a tarball exists at "${TAR}"
+  if [[ "${DOWNLOAD}" == 'true' ]]; then
+    version="$(curl -s https://go.dev/VERSION?m=text | head -1)"
+    echo "Downloading Go version: ${version}"
+    wget --quiet \
+      -O "${TAR}" \
+      "https://dl.google.com/go/${version}.linux-amd64.tar.gz"
+    echo "Downloaded Go tarball to: ${TAR}"
+  elif [[ -f "${TAR}" ]]; then
+    echo "Using provided Go tarball: ${TAR}"
+  else
+    echo "Error: No Go tarball found at ${TAR}. Please provide a valid tarball or use the -d option to download it."
+    exit 1
+  fi
+
+  # Report on current go
+  installed='false'
+  if [[ -x "$(command -v go)" ]]; then
+    installed='true'
+    echo "Current Go version:"
+    go version
+  else
+    echo "Go is not installed."
+  fi
+
+  # Set GOROOT
+  GOROOT='/usr/local/go'
+  if [[ -n "${GOROOT_OVERRIDE}" ]]; then
+    echo "Using GOROOT override: ${GOROOT_OVERRIDE}"
+    GOROOT="${GOROOT_OVERRIDE}"
+  elif [[ "${installed}" == 'true' ]] ; then 
+    echo "Using current GOROOT: $(go env GOROOT)"
+    GOROOT="$(go env GOROOT)"
+  fi
+
+  # Remove current go installation if it exists
+  sudo rm -rf "${GOROOT}"
+  if [[ "${installed}" == 'true' ]]; then
+    echo "Removed existing Go installation."
+  fi
+
+  # Extract the tarball to GOROOT
+  sudo tar -C "$(dirname "${GOROOT}")" -xzf "${TAR}"
+  echo "Extracted Go tarball to: ${GOROOT}"
+
+  # Report on new go
+  echo "New Go version:"
+  go version
+}
+
+# Option parsing
+declare PARAMS=""
+declare DOWNLOAD='false'
+declare TAR="${HOME}/downloads/go.latest.linux-amd64.tar.gz"
+declare GOROOT_OVERRIDE=''
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    -d|--download) # download flag
+      DOWNLOAD='true'
+      shift
+      ;;
+    -t|--tar) # specify tar directory
+      if [[ -n "$2" && ! "$2" =~ ^- ]]; then
+        TAR="$2"
+        shift 2
+      else
+        echo "Error: --tar requires a non-empty option argument." >&2
+        exit 1
+      fi
+      ;;
+    -g|--goroot) # specify GOROOT override
+      if [[ -n "$2" && ! "$2" =~ ^- ]]; then
+        GOROOT_OVERRIDE="$2"
+        shift 2
+      else
+        echo "Error: --goroot requires a non-empty option argument." >&2
+        exit 1
+      fi
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+# Freeze configuration flags
+readonly DOWNLOAD TAR
+
+main "$@"
