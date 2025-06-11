@@ -4,16 +4,13 @@ IGNORED_FILES_PATTERN='.*sw[klmnop]$'
 
 # run_tests executes a single round of testing
 run_tests () {
-    clear
-    echo "Installing..."
-    if go install $@; then
-        echo "Testing..."
-        gotestsum $@ 
-    fi
+  clear
+  echo "Testing..."
+  gotestsum "$@"
 }
 
 # run initial round of tests
-run_tests
+run_tests "$@"
 
 inotifywait --exclude="${IGNORED_FILES_PATTERN}" -e modify,moved_from -m -r -q . |
 while read -r directory events filename; do
@@ -29,5 +26,5 @@ while read -r directory events filename; do
       true
   done
 
-  run_tests
+  run_tests "$@"
 done
