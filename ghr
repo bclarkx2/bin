@@ -1,0 +1,88 @@
+#!/usr/bin/env bash 
+
+usage() {
+  echo "Usage: ghr <request_file.json>"
+  echo "Creates or updates a draft review on the current PR using the provided JSON file."
+  echo
+  echo "The JSON file should contain the review body, event, and comments as per GitHub API."
+  echo "Example JSON structure:"
+  echo '{
+  "body": "This is a draft review.",
+  "comments": [
+    {
+      "path": "file1.txt",
+      "start_line": 8,
+      "start_side": "LEFT",
+      "line": 10,
+      "side": "RIGHT",
+      "body": "Please check this line."
+    }
+  ]
+}'
+}
+
+api() {
+  gh api \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$@"
+}
+
+list_reviews() {
+  api "/repos/${OWNER}/${REPO}/pulls/${PULL_NUMBER}/reviews"
+}
+
+get_pending_review() {
+  review_id="$(list_reviews | jq -r '.[] | select(.state=="PENDING") | .id')"
+  echo "$review_id"
+}
+
+delete_review() {
+  local -r review_id="$1"
+  api "/repos/${OWNER}/${REPO}/pulls/${PULL_NUMBER}/reviews/${review_id}" \
+    --method DELETE
+}
+
+new_draft_review() {
+  api "/repos/${OWNER}/${REPO}/pulls/${PULL_NUMBER}/reviews" \
+    --method POST \
+    --input "${REQUEST_FILE}"
+}
+
+main() {
+  review_id="$(get_pending_review)"
+
+  if [[ ! -z "$review_id" ]]; then
+    echo "Deleting existing pending review..."
+    delete_review "$review_id"
+  fi
+
+  echo "Creating new draft review..."
+  new_draft_review
+}
+
+# Parse CLI options
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+# Check for request file argument
+REQUEST_FILE="$1"
+if [[ -z "${REQUEST_FILE}" ]]; then
+  usage
+  exit 1
+fi
+if [[ ! -f "${REQUEST_FILE}" ]]; then
+  echo "Error: File '${REQUEST_FILE}' not found"
+  usage
+  exit 1
+fi
+
+# Extract details based on current working directory, assuming it's a git repo
+# with a PR checked out.
+OWNER="$(gh repo view --json owner -q .owner.login)"
+REPO="$(gh repo view --json name -q .name)"
+PULL_NUMBER="$(gh pr view --json number -q .number)"
+
+main "$@"
