@@ -1,0 +1,63 @@
+#!/bin/bash 
+
+usage() {
+  printf '%s\n' "Usage: install-docker-compose version [-h]
+install-docker-compose installs the Docker Compose CLI plugin for the current
+user at a specific version.
+
+where:
+  version     - the version of the Docker Compose CLI plugin to install
+  -h, --help  - show this help text"
+}
+
+main() {
+  DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+  mkdir -p $DOCKER_CONFIG/cli-plugins
+  curl -SL https://github.com/docker/compose/releases/download/"${VERSION}"/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+
+  chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose  
+
+  docker compose version
+}
+
+# Option parsing
+declare PARAMS=""
+declare VERSION=""
+while (( "$#" )); do
+  case $1 in
+    -h|--help)  # display help message
+      usage
+      exit 1
+      ;;
+    --)  # End argument parsing
+      shift
+      break
+      ;;
+    -*|--*)  # unsupported flags
+      echo "Unsupported flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)  # preserve positional arguments
+      PARAMS="${PARAMS} $1"
+      shift
+      ;;
+  esac
+done
+
+# set positional arguments in their proper place
+eval set -- "${PARAMS}"
+
+VERSION="$1"
+if [ -z "$VERSION" ]; then
+  echo "positional argument version is required" >&2
+  usage
+  exit 1
+fi
+
+
+# Freeze configuration flags
+readonly VERSION
+
+main
+
