@@ -42,9 +42,9 @@ main() {
   if [[ -n "${GOROOT_OVERRIDE}" ]]; then
     echo "Using GOROOT override: ${GOROOT_OVERRIDE}"
     GOROOT="${GOROOT_OVERRIDE}"
-  elif [[ "${installed}" == 'true' ]] ; then 
-    echo "Using current GOROOT: $(go env GOROOT)"
-    GOROOT="$(go env GOROOT)"
+  # elif [[ "${installed}" == 'true' ]] ; then 
+  #   echo "Using current GOROOT: $(go env GOROOT)"
+  #   GOROOT="$(go env GOROOT)"
   fi
 
   # Remove current go installation if it exists
