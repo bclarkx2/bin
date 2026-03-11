@@ -1,0 +1,13 @@
+#!/usr/bin/env bash 
+
+service="$1"
+
+if [ -z "$service" ]; then
+  echo "Usage: rebuild <service-name>"
+  exit 1
+fi
+
+docker compose stop "${service}" && \
+  docker compose build "${service}" && \
+  docker compose up -d "${service}" && \
+  docker compose logs -f --tail=100 "${service}"
